@@ -50,14 +50,45 @@ def scan_blocks(chain, start_block, end_block, contract_address, eventfile='depo
     else:
         print( f"Scanning blocks {start_block} - {end_block} on {chain}" )
 
+    columns = ['chain', 'token', 'recipient', 'amount', 'transactionHash', 'address', 'date']
+    df = pd.DataFrame(columns=columns)
+
     if end_block - start_block < 30:
         event_filter = contract.events.Deposit.create_filter(from_block=start_block,to_block=end_block,argument_filters=arg_filter)
         events = event_filter.get_all_entries()
         #print( f"Got {len(events)} entries for block {block_num}" )
         # TODO YOUR CODE HERE
+        for evt in events:
+            data = {
+                'chain': chain,
+                'token': evt.args['token'],
+                'recipient': evt.args['recipient'],
+                'amount': evt.args['amount'],
+                'transactionHash': evt.transactionHash.hex(),
+                'address': evt.address,
+                'date': datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            }
+            df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+
     else:
         for block_num in range(start_block,end_block+1):
             event_filter = contract.events.Deposit.create_filter(from_block=block_num,to_block=block_num,argument_filters=arg_filter)
             events = event_filter.get_all_entries()
             #print( f"Got {len(events)} entries for block {block_num}" )
             # TODO YOUR CODE HERE
+            for evt in events:
+                data = {
+                    'chain': chain,
+                    'token': evt.args['token'],
+                    'recipient': evt.args['recipient'],
+                    'amount': evt.args['amount'],
+                    'transactionHash': evt.transactionHash.hex(),
+                    'address': evt.address,
+                    'date': datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                }
+                df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+
+    df.to_csv(eventfile, index=False)
+    print(f"Events recorded to {eventfile}")
+
+
